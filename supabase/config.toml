@@ -1,0 +1,5 @@
+[functions.chat]
+verify_jwt = false
+
+[functions.process-pdf]
+verify_jwt = false

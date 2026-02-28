@@ -63,19 +63,31 @@ export const ChatInterface = () => {
         setLoading(true);
 
         try {
-            const { data, error } = await supabase.functions.invoke('chat', {
-                body: { query: userMessage.content }
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            if (!supabaseUrl || !supabaseAnonKey) {
+                throw new Error('Vercel environment variables missing. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel settings.');
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No active session. Please sign in again.');
+
+            const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'apikey': supabaseAnonKey
+                },
+                body: JSON.stringify({ query: userMessage.content })
             });
 
-            if (error) {
-                // Try to parse the error as JSON if it's a string, or use the object's message
-                let errorDetails = error.message;
-                try {
-                    const parsed = JSON.parse(error.message);
-                    if (parsed.error) errorDetails = parsed.error;
-                } catch (e) { /* use default message */ }
+            const data = await response.json();
 
-                throw new Error(errorDetails);
+            if (!response.ok) {
+                // Return the error from the Edge Function if possible
+                throw new Error(data.error || `Edge Function error (${response.status})`);
             }
 
             const assistantMessage: Message = {
@@ -91,7 +103,7 @@ export const ChatInterface = () => {
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `${err.message || 'Operation failed. Please ensure Edge Functions are deployed and secrets are set.'}`,
+                content: `⚠️ Error: ${err.message}`,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, assistantMessage]);

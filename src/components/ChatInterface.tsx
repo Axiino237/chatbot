@@ -63,14 +63,20 @@ export const ChatInterface = () => {
         setLoading(true);
 
         try {
-            // In a real implementation, this would call a Supabase Edge Function
-            // which uses pgvector to find relevant chunks and then calls Groq.
-
             const { data, error } = await supabase.functions.invoke('chat', {
                 body: { query: userMessage.content }
             });
 
-            if (error) throw error;
+            if (error) {
+                // Try to parse the error as JSON if it's a string, or use the object's message
+                let errorDetails = error.message;
+                try {
+                    const parsed = JSON.parse(error.message);
+                    if (parsed.error) errorDetails = parsed.error;
+                } catch (e) { /* use default message */ }
+
+                throw new Error(errorDetails);
+            }
 
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -85,7 +91,7 @@ export const ChatInterface = () => {
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `Error: ${err.message || 'Operation failed. Please ensure Edge Functions are deployed.'}`,
+                content: `${err.message || 'Operation failed. Please ensure Edge Functions are deployed and secrets are set.'}`,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, assistantMessage]);

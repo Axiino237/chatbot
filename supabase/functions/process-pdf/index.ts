@@ -99,7 +99,8 @@ serve(async (req) => {
 
         const insertPromises = chunks.map(async (chunk, index) => {
             try {
-                const embedding = await generateEmbedding(chunk)
+                const hfModelUrl = Deno.env.get('HF_MODEL_URL') || "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5"
+                const embedding = await generateEmbedding(chunk, hfModelUrl)
                 const { error: insertError } = await supabase.from('documents').insert({
                     user_id: userId,
                     file_name: record.name,
@@ -159,14 +160,14 @@ function chunkText(text: string, size: number, overlap: number) {
     return chunks
 }
 
-async function generateEmbedding(text: string) {
+async function generateEmbedding(text: string, modelUrl: string) {
     const hfToken = Deno.env.get('HUGGINGFACE_TOKEN')?.trim()
     if (!hfToken) {
         throw new Error('HUGGINGFACE_TOKEN is not set in Supabase Secrets')
     }
 
     const response = await fetch(
-        "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5",
+        modelUrl,
         {
             headers: {
                 Authorization: `Bearer ${hfToken}`,

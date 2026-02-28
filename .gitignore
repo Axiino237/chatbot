@@ -22,19 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Sensitive data
-.env
-secret.txt
-push_error.txt
-*.local
-
-# Test results & temporary files
-test_results*.txt
-guardrail_results.txt
-err.txt
-hf_err.txt
-*.webp
-*.png
-temp_*.mjs
-*test_*.txt

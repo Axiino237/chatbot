@@ -59,6 +59,7 @@ serve(async (req) => {
         const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
         const hfToken = Deno.env.get('HUGGINGFACE_TOKEN')
+        const hfModelUrl = Deno.env.get('HF_MODEL_URL') || "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5"
 
         log.debug('SUPABASE_URL:', supabaseUrl ? '✅ set' : '❌ MISSING')
         log.debug('SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ set' : '❌ MISSING')
@@ -119,7 +120,7 @@ serve(async (req) => {
                 const chunkIdx = i + bi
                 try {
                     log.debug(`  Embedding chunk #${chunkIdx} (${chunk.length} chars)`)
-                    const embedding = await generateEmbedding(chunk, hfToken)
+                    const embedding = await generateEmbedding(chunk, hfToken, hfModelUrl)
                     log.debug(`  Embedding #${chunkIdx} → vector[${embedding.length}]`)
 
                     const { error } = await supabase.from('documents').insert({
@@ -186,10 +187,10 @@ function chunkText(text: string, size: number, overlap: number): string[] {
     return chunks
 }
 
-async function generateEmbedding(text: string, hfToken: string): Promise<number[]> {
+async function generateEmbedding(text: string, hfToken: string, modelUrl: string): Promise<number[]> {
     log.debug('  HuggingFace API call for text:', text.substring(0, 60) + '...')
     const response = await fetch(
-        "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5",
+        modelUrl,
         {
             method: "POST",
             headers: {

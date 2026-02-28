@@ -1,0 +1,1 @@
+{"error":"Error: Groq API Error (400): {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported.\n    at Server.<anonymous> (file:///var/tmp/sb-compile-edge-runtime/chat/index.ts:70:13)\n    at eventLoopTick (ext:core/01_core.js:175:7)\n    at async Server.#respond (https://deno.land/std@0.168.0/http/server.ts:221:18)"}

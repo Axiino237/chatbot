@@ -39,7 +39,8 @@ serve(async (req) => {
             global: { headers: { Authorization: authHeader } }
         })
 
-        const embedding = await generateEmbedding(query)
+        const hfModelUrl = Deno.env.get('HF_MODEL_URL') || "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5"
+        const embedding = await generateEmbedding(query, hfModelUrl)
 
         const { data: documents, error: matchError } = await supabase.rpc('match_documents', {
             query_embedding: embedding,
@@ -94,7 +95,7 @@ ${context || 'No company information available. Please contact support.'}`;
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: Deno.env.get('GROQ_MODEL') || "llama-3.1-8b-instant",
                 messages: [
                     {
                         role: "system",
@@ -130,14 +131,14 @@ ${context || 'No company information available. Please contact support.'}`;
     }
 })
 
-async function generateEmbedding(text: string) {
+async function generateEmbedding(text: string, modelUrl: string) {
     const hfToken = Deno.env.get('HUGGINGFACE_TOKEN')?.trim()
     if (!hfToken) {
         throw new Error('HUGGINGFACE_TOKEN is not set in Supabase Secrets')
     }
 
     const response = await fetch(
-        "https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5",
+        modelUrl,
         {
             headers: {
                 Authorization: `Bearer ${hfToken}`,

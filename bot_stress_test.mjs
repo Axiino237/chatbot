@@ -17,7 +17,7 @@ const ANON_KEY = env['VITE_SUPABASE_ANON_KEY'];
 // ── Login ─────────────────────────────────────────────────────
 const sb = createClient(SUPABASE_URL, ANON_KEY);
 const { data: authData, error: authError } = await sb.auth.signInWithPassword({
-    email: 'aravinthvijay127@gmail.com', password: 'Login@123'
+    email: env['TEST_USER_EMAIL'], password: env['TEST_USER_PASSWORD']
 });
 if (authError) { console.error('Login failed:', authError.message); process.exit(1); }
 const TOKEN = authData.session.access_token;
@@ -273,7 +273,7 @@ for (let i = 0; i < tests.length; i++) {
         console.log('❌ ERROR: ' + e.message);
         results.push({ ...t, pass: false, reason: 'Error: ' + e.message, answer: '' });
     }
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 3000));
 }
 
 // ── Score by category ─────────────────────────────────────────

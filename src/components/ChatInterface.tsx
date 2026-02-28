@@ -63,32 +63,14 @@ export const ChatInterface = () => {
         setLoading(true);
 
         try {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            // In a real implementation, this would call a Supabase Edge Function
+            // which uses pgvector to find relevant chunks and then calls Groq.
 
-            if (!supabaseUrl || !supabaseAnonKey) {
-                throw new Error('Vercel environment variables missing. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel settings.');
-            }
-
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error('No active session. Please sign in again.');
-
-            const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'apikey': supabaseAnonKey
-                },
-                body: JSON.stringify({ query: userMessage.content })
+            const { data, error } = await supabase.functions.invoke('chat', {
+                body: { query: userMessage.content }
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Return the error from the Edge Function if possible
-                throw new Error(data.error || `Edge Function error (${response.status})`);
-            }
+            if (error) throw error;
 
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -103,7 +85,7 @@ export const ChatInterface = () => {
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `⚠️ Error: ${err.message}`,
+                content: `Error: ${err.message || 'Operation failed. Please ensure Edge Functions are deployed.'}`,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, assistantMessage]);
